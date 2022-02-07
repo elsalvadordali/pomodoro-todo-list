@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Goudy+Bookletter+1911&display=swap"
+      rel="stylesheet"
+    />
+    <title>Great day!</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        margin: 0;
+        transition: background 5s;
+        min-height: 100vh;
+        font-family: 'Goudy Bookletter 1911', serif;
+        font-size: 20px;
+      }
+      input[type='text'] {
+        outline: none;
+        border: 2px solid #e4e4e4;
+        background-color: transparent;
+        height: 30px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        padding: 6px 12px;
+        margin-bottom: 6px;
+        font-family: 'Goudy Bookletter 1911', serif;
+        font-size: 20px;
+      }
+      .container {
+        margin-top: 33vh;
+        border: 3px solid #e4e4e4;
+        border-radius: 16px;
+        background-color: rgba(255, 255, 255, 0.3);
+        height: fit-content;
+        min-width: 360px;
+      }
+      .individual {
+        display: flex;
+        align-content: center;
+        align-items: center;
+      }
+      label {
+        margin: 2px 6px;
+      }
+      button {
+        padding: 6px 12px;
+        background-color: rgba(255, 255, 255, 0.3);
+        border: 2px solid #e4e4e4;
+        border-radius: 8px;
+        margin-left: auto;
+        font-family: 'Goudy Bookletter 1911', serif;
+        font-size: 20px;
+      }
+      .individual,
+      .controls {
+        margin: 8px 4px;
+        padding: 8px;
+      }
+
+      .hidden {
+        display: none;
+      }
+      .highlight-children div {
+        border: 2px dashed #e4e4e4;
+        border-radius: 6px;
+      }
+      .highlight-children div:hover {
+        border: 2px dashed #d95336;
+      }
+      #myModal {
+        position: absolute;
+        top: calc(33vh - 200px);
+        left: calc(50% - 130px);
+        height: 160px;
+        width: 260px;
+        text-align: center;
+        z-index: 15;
+        background-color: #e4e4e4;
+        border-radius: 16px;
+      }
+      .flex-center {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="myModal" class="modal ">
+      <div class="flex-center">
+        <p>Click on a task to delete it</p>
+      </div>
+    </div>
+    <div class="container">
+      <div id="timer"></div>
+      <div id="tasks"></div>
+      <div class="controls">
+        <button id="toggle">Toggle Controls</button>
+        <div id="controls" class="hidden">
+          <h5>Create New Task</h5>
+          <input type="text" id="new-task" placeholder="add new task..." />
+          <button type="submit" id="create">Create!</button>
+          <h5>Delete task</h5>
+          <button type="submit" id="delete">Delete</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      let timer
+      let time = 0
+      let modal
+      let currentIndividual = null
+      const updateLocal = () => {
+        const tasks = Array.from(document.getElementById('tasks').children)
+        const arrOfElements = tasks.map(task => {
+          return {
+            name: task.children[1].innerText,
+            isComplete: task.children[0].checked
+          }
+        })
+        console.log(arrOfElements)
+        localStorage.tasks = JSON.stringify(arrOfElements)
+      }
+      const launchModal = () => {
+        let modal = document.getElementById('myModal')
+        console.log(modal)
+        modal.classList.remove('hidden')
+        console.log(modal.classList)
+        setTimeout(() => {
+          modal.classList.add('hidden')
+          console.log(modal.classList)
+        }, 3000)
+      }
+      const resetTasksComplete = arr => {
+        let arrOfTasks = JSON.parse(arr)
+        console.log('rrOfTasks: ', arrOfTasks)
+        const incompleteTasks = arrOfTasks.map(task => {
+          console.log(task)
+          task.isComplete = false
+          return task
+        })
+        localStorage.tasks = JSON.stringify(incompleteTasks)
+      }
+
+      const checkDay = () => {
+        if (localStorage.today) {
+          const local = new Date(localStorage.today)
+          const now = new Date()
+          console.log(local, now, local.getDate(), now.getDate())
+          if (local.getDate() !== now.getDate()) {
+            resetTasksComplete(localStorage.tasks)
+            console.log(localStorage.tasks)
+          }
+        }
+
+        localStorage.today = new Date()
+      }
+      const createSingleElement = (task, isComplete, index) => {
+        const item = document.createElement('div')
+        item.classList.add('individual')
+        const check = document.createElement('input')
+        check.disabled = true
+        check.classList.add('check')
+        check.type = 'checkbox'
+
+        const label = document.createElement('label')
+        if (isComplete) {
+          check.checked = true
+          label.style.textDecoration = 'line-through'
+        }
+        item.appendChild(check)
+        item.appendChild(label)
+        if (isComplete === false) {
+          const button = document.createElement('button')
+          button.innerText = 'Start'
+          item.appendChild(button)
+        }
+        item.id = 'ind-' + index
+        check.id = 'check-' + index
+        label.innerText = task
+        return item
+      }
+      const calculateBackground = () => {
+        const arr = Array.from(document.querySelectorAll('.check'))
+        let completed = 0
+        arr.forEach(checkbox => {
+          if (checkbox.checked) {
+            completed++
+          }
+        })
+        const color1 = '245,136,144'
+        const transparency = completed / arr.length
+        const color2 = '87,169,180'
+        const bg = `linear-gradient(to bottom, rgba(${color1}, ${transparency}), rgba(${color2},${transparency}))`
+        console.log(bg, completed, arr)
+        document.body.style.background = bg
+      }
+      const loadListonStartUp = () => {
+        checkDay()
+        const emptyArr = []
+        const tasks = document.getElementById('tasks')
+        tasks.innerHTML = ''
+
+        if (!localStorage.tasks) localStorage.tasks = JSON.stringify(emptyArr)
+        console.log(localStorage.tasks)
+        let arr = JSON.parse(localStorage.tasks)
+        arr.forEach((task, i) => {
+          const element = createSingleElement(task.name, task.isComplete, i)
+          tasks.appendChild(element)
+        })
+        calculateBackground()
+      }
+      loadListonStartUp()
+
+      const deleteItem = event => {
+        let parent = document.getElementById('tasks')
+        let target
+        if (event.target.parentElement.classList.contains('individual')) {
+          target = event.target.parentElement
+        } else if (event.target.classList.contains('individual')) {
+          target = event.target
+        }
+        parent.removeChild(target)
+        document
+          .getElementById('tasks')
+          .removeEventListener('click', deleteItem, true)
+        document.addEventListener('click', processClick, true)
+
+        parent.classList.remove('highlight-children')
+        updateLocal()
+      }
+
+      const createNewTask = () => {
+        const input = document.getElementById('new-task')
+        const index = document.getElementById('tasks').children.length
+        const newElement = createSingleElement(input.value, false, index)
+        tasks.appendChild(newElement)
+        input.value = ''
+        updateLocal()
+        calculateBackground()
+      }
+      const processClick = event => {
+        if (event.target.localName === 'button') {
+          if (!event.target.id) {
+            const parent = event.target.parentElement
+            console.log(parent.firstChild.id)
+            if (
+              parent.firstChild.id === currentIndividual ||
+              currentIndividual === null
+            ) {
+              if (timer) {
+                return endTimer(parent.id)
+              } else {
+                return startTimer(parent.id)
+              }
+            }
+          }
+          if (event.target.id === 'toggle') {
+            let control = document.getElementById('controls')
+            return control.classList.toggle('hidden')
+          }
+          if (event.target.id === 'create') {
+            return createNewTask()
+          }
+          if (event.target.id === 'delete') {
+            launchModal()
+            let parent = document.getElementById('tasks')
+            parent.classList.add('highlight-children')
+
+            document.removeEventListener('click', processClick, true)
+            document
+              .getElementById('tasks')
+              .addEventListener('click', deleteItem, true)
+          }
+        }
+      }
+      const endTimer = () => {
+        const ender = clearInterval(timer)
+        timer = undefined
+      }
+
+      const clearTimer = parent => {
+        endTimer()
+        time = 0
+        const button = parent.lastElementChild
+        parent.firstElementChild.checked = true
+        parent.removeChild(button)
+        parent.children[1].style.textDecoration = 'line-through'
+        document.title = 'Great day'
+        currentIndividual = null
+        calculateBackground()
+        updateLocal()
+      }
+
+      const startTimer = parentId => {
+        const parent = document.getElementById(parentId)
+        const button = parent.lastElementChild
+        currentIndividual = parent.firstElementChild.id
+        const setSeconds = () => {
+          const POMODORO_25_MINUTES_IN_SECONDS = 1500
+          if (time >= POMODORO_25_MINUTES_IN_SECONDS) {
+            clearTimer(parent)
+          }
+          time++
+          let minutes = Math.floor(time / 60)
+          minutes = minutes < 10 ? '0' + minutes.toString() : minutes
+          let seconds = time - minutes * 60
+          seconds = seconds < 10 ? '0' + seconds.toString() : seconds
+          button.innerHTML = minutes + ':' + seconds
+          document.title = minutes + ':' + seconds
+        }
+
+        if (!timer) {
+          timer = setInterval(setSeconds, 1000)
+        } else {
+          console.log('cannot set multiple timers at the same time')
+        }
+      }
+      document.addEventListener('click', processClick, true)
+      calculateBackground()
+    </script>
+  </body>
+</html>
