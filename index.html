@@ -92,6 +92,9 @@
         align-items: center;
         justify-content: center;
       }
+      #timer {
+        font-size: 52px;
+      }
     </style>
   </head>
   <body>
@@ -115,6 +118,8 @@
       </div>
     </div>
     <script>
+      const audioObj = new Audio('vibraphone-transition-music-cue-14487.mp3')
+
       let timer
       let time = 0
       let modal
@@ -284,6 +289,10 @@
         }
       }
       const endTimer = () => {
+        if (audioObj.readyState >= 3) {
+          audioObj.play()
+        }
+
         const ender = clearInterval(timer)
         timer = undefined
       }
@@ -301,22 +310,33 @@
         updateLocal()
       }
 
+      const calculateMinutesSeconds = time => {
+        let minutes = Math.floor(time / 60)
+        minutes = minutes < 10 ? '0' + minutes.toString() : minutes
+        let seconds = time - minutes * 60
+        seconds = seconds < 10 ? '0' + seconds.toString() : seconds
+        return [minutes, seconds]
+      }
+
+      const updateDisplayTimer = time => {
+        let display = document.getElementById('timer')
+        display.innerText = time[0] + ':' + time[1]
+      }
+
       const startTimer = parentId => {
         const parent = document.getElementById(parentId)
         const button = parent.lastElementChild
         currentIndividual = parent.firstElementChild.id
         const setSeconds = () => {
-          const POMODORO_25_MINUTES_IN_SECONDS = 1500
+          const POMODORO_25_MINUTES_IN_SECONDS = 15
           if (time >= POMODORO_25_MINUTES_IN_SECONDS) {
             clearTimer(parent)
           }
           time++
-          let minutes = Math.floor(time / 60)
-          minutes = minutes < 10 ? '0' + minutes.toString() : minutes
-          let seconds = time - minutes * 60
-          seconds = seconds < 10 ? '0' + seconds.toString() : seconds
-          button.innerHTML = minutes + ':' + seconds
-          document.title = minutes + ':' + seconds
+          const formattedTime = calculateMinutesSeconds(time)
+          button.innerHTML = formattedTime[0] + ':' + formattedTime[1]
+          document.title = formattedTime[0] + ':' + formattedTime[1]
+          updateDisplayTimer(formattedTime)
         }
 
         if (!timer) {
