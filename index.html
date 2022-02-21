@@ -94,6 +94,7 @@
       }
       #timer {
         font-size: 52px;
+        padding-left: 25%;
       }
     </style>
   </head>
@@ -104,7 +105,9 @@
       </div>
     </div>
     <div class="container">
-      <div id="timer"></div>
+      <div id="timer">
+        <h5 id="timer-text">25:00</h5>
+      </div>
       <div id="tasks"></div>
       <div class="controls">
         <button id="toggle">Toggle Controls</button>
@@ -319,7 +322,7 @@
       }
 
       const updateDisplayTimer = time => {
-        let display = document.getElementById('timer')
+        let display = document.getElementById('timer-text')
         display.innerText = time[0] + ':' + time[1]
       }
 
